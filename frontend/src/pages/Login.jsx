@@ -50,9 +50,7 @@ export default function Login() {
 
         <section className="login-panel" aria-labelledby="login-title">
           <div className="login-content">
-            <h1 id="login-title">Iniciar<br />
-              <span>Sesión</span>
-            </h1>
+            <h1 id="login-title">Iniciar <span>Sesión</span></h1>
 
             <form className="login-card" id="login-form" onSubmit={handleSubmit}>
               <div className="field">
