@@ -85,6 +85,8 @@ export default function Encargado() {
   const [bulkDeleteCriteria, setBulkDeleteCriteria] = useState({ semester: '', group: '', career: '', shift: '' });
   const [bulkDeleteConfirmation, setBulkDeleteConfirmation] = useState(null);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleteTyped, setBulkDeleteTyped] = useState('');
   const [toast, setToast] = useState({ text: '', isError: false });
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
@@ -183,6 +185,7 @@ export default function Encargado() {
       && student.career === bulkDeleteCriteria.career
       && (student.shift || 'Matutino') === bulkDeleteCriteria.shift
     )).length;
+    setBulkDeleteTyped('');
     setBulkDeleteConfirmation({ ...bulkDeleteCriteria, matchingCount });
   };
 
@@ -200,6 +203,8 @@ export default function Encargado() {
       });
       setBulkDeleteConfirmation(null);
       setBulkDeleteCriteria({ semester: '', group: '', career: '', shift: '' });
+      setBulkDeleteTyped('');
+      setBulkDeleteOpen(false);
       showToast(
         `Se eliminaron ${data.deletedStudents} alumnos, ${data.deletedRequests} solicitudes y ${data.deletedJustifications} justificantes.`
       );
@@ -340,6 +345,10 @@ export default function Encargado() {
   const clearStudentFilters = () => {
     setStudentSearch('');
     setStudentFilters({ career: '', semester: '', group: '', shift: '' });
+    setBulkDeleteCriteria({ semester: '', group: '', career: '', shift: '' });
+    setBulkDeleteConfirmation(null);
+    setBulkDeleteTyped('');
+    setBulkDeleteOpen(false);
   };
 
   return (
@@ -348,26 +357,7 @@ export default function Encargado() {
         <div className="wordmark">Justifica<span>T</span></div>
         <span className="staff-label"></span>
         <div className="staff-header-actions">
-          <div className="account-menu">
-            <button
-              className="staff-account-trigger"
-              type="button"
-              onClick={() => setAccountMenuOpen((open) => !open)}
-              aria-label="Menú de cuenta"
-              aria-expanded={accountMenuOpen}
-              aria-controls="staff-account-popup"
-              title="Menú de cuenta"
-            >
-              <img className="account-mark" src="/dgti.png" alt="DGETI" />
-            </button>
-            {accountMenuOpen && (
-              <div className="staff-account-popup" id="staff-account-popup">
-                <button className="logout-button" type="button" onClick={handleLogout}>
-                  Cerrar sesión
-                </button>
-              </div>
-            )}
-          </div>
+          <img className="account-mark" src="/dgti.png" alt="DGETI" />
         </div>
       </header>
 
@@ -394,19 +384,36 @@ export default function Encargado() {
               <path d="M17 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
           </button>
-          <button
-            className={`nav-link student-profile-link ${activeTab === 'perfil' ? 'active' : ''}`}
-            type="button"
-            onClick={openProfile}
-            aria-label="Ver perfil"
-            aria-current={activeTab === 'perfil' ? 'page' : undefined}
-            title="Ver perfil"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="12" cy="8" r="4"/>
-              <path d="M5 21a7 7 0 0 1 14 0"/>
-            </svg>
-          </button>
+          <div className="sidebar-account-menu">
+            <button
+              className={`nav-link student-profile-link ${activeTab === 'perfil' ? 'active' : ''}`}
+              type="button"
+              onClick={() => setAccountMenuOpen((open) => !open)}
+              aria-label="Menú de cuenta"
+              aria-expanded={accountMenuOpen}
+              aria-controls="staff-account-popup"
+              title="Menú de cuenta"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M5 21a7 7 0 0 1 14 0"/>
+              </svg>
+            </button>
+            {accountMenuOpen && (
+              <div className="staff-account-popup sidebar-account-popup" id="staff-account-popup">
+                <button className="account-menu-option" type="button" onClick={openProfile}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="8" r="4"/>
+                    <path d="M5 21a7 7 0 0 1 14 0"/>
+                  </svg>
+                  Mi perfil
+                </button>
+                <button className="logout-button" type="button" onClick={handleLogout}>
+                  Cerrar sesión
+                </button>
+              </div>
+            )}
+          </div>
         </nav>
 
         <main className="staff-main">
@@ -441,7 +448,7 @@ export default function Encargado() {
                     <label htmlFor="request-search">Buscar solicitud</label>
                     <input
                       id="request-search"
-                      type="search"
+                      type="text"
                       placeholder="Nombre, correo o matrícula"
                       value={requestSearch}
                       onChange={(event) => setRequestSearch(event.target.value)}
@@ -553,6 +560,21 @@ export default function Encargado() {
                   <span className="legend-item"><i className="legend-dot yellow"></i>2: atención</span>
                   <span className="legend-item"><i className="legend-dot red"></i>3+: seguimiento</span>
                 </div>
+                <button
+                  className="bulk-delete-toggle"
+                  type="button"
+                  onClick={() => setBulkDeleteOpen((open) => !open)}
+                  aria-expanded={bulkDeleteOpen}
+                  aria-controls="bulk-delete-panel"
+                >
+                  <svg className="bulk-delete-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M3 6h18M8 6V4h8v2m3 0-.8 14H5.8L5 6m5 4v6m4-6v6"/>
+                  </svg>
+                  <strong>Eliminación de grupos</strong>
+                  <svg className="bulk-delete-toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="m6 9 6 6 6-6"/>
+                  </svg>
+                </button>
               </div>
 
               {isDashboardLoading ? (
@@ -564,7 +586,7 @@ export default function Encargado() {
                     <label htmlFor="student-search">Buscar alumno</label>
                     <input
                       id="student-search"
-                      type="search"
+                      type="text"
                       placeholder="Nombre, correo o matrícula"
                       value={studentSearch}
                       onChange={(event) => setStudentSearch(event.target.value)}
@@ -611,7 +633,9 @@ export default function Encargado() {
                     )}
                   </div>
                 </div>
-                <form className="bulk-delete-bar" onSubmit={handleBulkDeleteRequest}>
+                <div className="bulk-delete-zone">
+                  {bulkDeleteOpen && (
+                  <form id="bulk-delete-panel" className="bulk-delete-bar" onSubmit={handleBulkDeleteRequest}>
                   <div className="bulk-delete-heading">
                     <strong>Borrar grupo</strong>
                     <span>Elimina alumnos y justificantes.</span>
@@ -670,7 +694,9 @@ export default function Encargado() {
                     </svg>
                     Borrar grupo
                   </button>
-                </form>
+                  </form>
+                  )}
+                </div>
                 <section className="staff-section student-table-panel">
                   <div className="table-wrap">
                     <table className="student-table">
@@ -696,10 +722,11 @@ export default function Encargado() {
                         const risk = count >= 3 ? 'red' : count === 2 ? 'yellow' : count === 1 ? 'green' : 'none';
                         return (
                           <tr key={student._id} className={`risk-${risk}`}>
-                            <td className="student-name-cell student-single-line" title={formatLastNamesFirst(student.fullName)}>
-                              {highlightRequestName(formatLastNamesFirst(student.fullName), studentSearch)}
+                            <td className="student-name-cell" title={`${formatLastNamesFirst(student.fullName)} · ${student.account}`}>
+                              <span className="student-single-line">{highlightRequestName(formatLastNamesFirst(student.fullName), studentSearch)}</span>
+                              <span className="student-email">{highlightRequestName(student.account, studentSearch)}</span>
                             </td>
-                            <td>{student.studentId}</td>
+                            <td>{highlightRequestName(student.studentId, studentSearch)}</td>
                             <td>{student.career}</td>
                             <td>{student.semester}°</td>
                             <td>{student.group}</td>
@@ -964,14 +991,31 @@ export default function Encargado() {
                   <strong>También se eliminarán sus solicitudes y justificantes emitidos.</strong>
                   <span>Esta acción es permanente y no se puede deshacer.</span>
                 </div>
+                <div className="bulk-delete-type-confirm">
+                  <label htmlFor="bulk-delete-type-input">Escribe <strong>ELIMINAR</strong> para confirmar el borrado</label>
+                  <input
+                    id="bulk-delete-type-input"
+                    type="text"
+                    value={bulkDeleteTyped}
+                    onChange={(event) => setBulkDeleteTyped(event.target.value)}
+                    placeholder="ELIMINAR"
+                    autoComplete="off"
+                    disabled={isBulkDeleting}
+                  />
+                </div>
               </>
             )}
             <div className="student-dialog-actions">
-              <button className="staff-action" type="button" onClick={() => setBulkDeleteConfirmation(null)} disabled={isBulkDeleting}>
+              <button className="staff-action" type="button" onClick={() => { setBulkDeleteConfirmation(null); setBulkDeleteTyped(''); }} disabled={isBulkDeleting}>
                 Cancelar
               </button>
               {bulkDeleteConfirmation.matchingCount > 0 && (
-                <button className="staff-action danger bulk-delete-confirm" type="button" onClick={handleBulkDelete} disabled={isBulkDeleting}>
+                <button
+                  className="staff-action danger bulk-delete-confirm"
+                  type="button"
+                  onClick={handleBulkDelete}
+                  disabled={isBulkDeleting || bulkDeleteTyped.trim().toUpperCase() !== 'ELIMINAR'}
+                >
                   {isBulkDeleting ? 'Eliminando...' : 'Sí, borrar grupo'}
                 </button>
               )}

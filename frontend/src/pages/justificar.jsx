@@ -240,26 +240,7 @@ export default function Justificar() {
         <div className="wordmark">Justifica<span>T</span></div>
         <span className="staff-label"></span>
         <div className="staff-header-actions">
-          <div className="account-menu">
-            <button
-              className="staff-account-trigger"
-              type="button"
-              onClick={() => setMenuOpen((open) => !open)}
-              aria-label="Menú de cuenta"
-              aria-expanded={menuOpen}
-              aria-controls="student-account-popup"
-              title="Menú de cuenta"
-            >
-              <img className="account-mark" src="/dgti.png" alt="DGETI" />
-            </button>
-          {menuOpen && (
-            <div className="staff-account-popup" id="student-account-popup">
-              <button className="logout-button" type="button" onClick={handleLogout}>
-                Cerrar sesión
-              </button>
-            </div>
-          )}
-          </div>
+          <img className="account-mark" src="/dgti.png" alt="DGETI" />
         </div>
       </header>
 
@@ -288,19 +269,36 @@ export default function Justificar() {
               <path d="M3 3v5h5M12 7v5l3 2"/>
             </svg>
           </button>
-          <button
-            className={`nav-link student-profile-link ${activeSection === 'perfil' ? 'active' : ''}`}
-            type="button"
-            aria-label="Ver perfil"
-            aria-current={activeSection === 'perfil' ? 'page' : undefined}
-            title="Ver perfil"
-            onClick={openProfile}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="12" cy="8" r="4"/>
-              <path d="M5 21a7 7 0 0 1 14 0"/>
-            </svg>
-          </button>
+          <div className="sidebar-account-menu">
+            <button
+              className={`nav-link student-profile-link ${activeSection === 'perfil' ? 'active' : ''}`}
+              type="button"
+              aria-label="Menú de cuenta"
+              aria-expanded={menuOpen}
+              aria-controls="student-account-popup"
+              title="Menú de cuenta"
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M5 21a7 7 0 0 1 14 0"/>
+              </svg>
+            </button>
+            {menuOpen && (
+              <div className="staff-account-popup sidebar-account-popup" id="student-account-popup">
+                <button className="account-menu-option" type="button" onClick={openProfile}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="8" r="4"/>
+                    <path d="M5 21a7 7 0 0 1 14 0"/>
+                  </svg>
+                  Mi perfil
+                </button>
+                <button className="logout-button" type="button" onClick={handleLogout}>
+                  Cerrar sesión
+                </button>
+              </div>
+            )}
+          </div>
         </nav>
 
         <main id="inicio" className="staff-main">
