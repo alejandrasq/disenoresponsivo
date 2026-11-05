@@ -1304,28 +1304,7 @@ input[readonly] {
 .bulk-delete-button:hover { border-color: var(--wine-dark); background: var(--wine-dark); }
 .bulk-delete-button:focus-visible,
 .bulk-delete-confirm:focus-visible { outline: 3px solid rgba(165, 46, 53, .28); outline-offset: 2px; }
-.bulk-delete-zone { margin: 0 0 11px; }
-.bulk-delete-toggle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-left: auto;
-    padding: 9px 14px;
-    border: 1px solid var(--wine);
-    border-radius: 12px;
-    color: #fff;
-    background: linear-gradient(180deg, var(--wine), var(--wine-dark));
-    box-shadow: 0 4px 14px rgba(113, 13, 22, .35);
-    font-size: 11px;
-    text-align: left;
-}
-.bulk-delete-toggle strong { font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
-.bulk-delete-toggle:hover { border-color: var(--wine-dark); background: var(--wine-dark); box-shadow: 0 6px 18px rgba(113, 13, 22, .45); }
-.bulk-delete-toggle:focus-visible { outline: 3px solid rgba(165, 46, 53, .28); outline-offset: 2px; }
-.bulk-delete-toggle svg { width: 14px; height: 14px; flex: 0 0 auto; }
-.bulk-delete-toggle-chevron { transition: transform .2s ease; }
-.bulk-delete-toggle[aria-expanded="true"] .bulk-delete-toggle-chevron { transform: rotate(180deg); }
-.bulk-delete-zone .bulk-delete-bar { margin: 0; }
+.bulk-delete-bar .student-filter-summary { display: flex; align-items: center; gap: 10px; align-self: center; }
 .bulk-delete-overlay {
     position: fixed;
     z-index: 30;
@@ -2248,7 +2227,6 @@ input[readonly] {
     .staff-section { width: 100%; padding: 17px; }
     .student-filter-bar { gap: 10px; padding: 11px; }
     .staff-section-heading { flex-direction: column; }
-    .bulk-delete-toggle { margin-left: 0; }
     .staff-request-details { grid-template-columns: 1fr; gap: 5px; }
     .student-edit-grid { grid-template-columns: 1fr; }
     .legend { gap: 8px; }

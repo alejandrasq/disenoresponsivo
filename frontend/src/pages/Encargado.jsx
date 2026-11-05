@@ -64,7 +64,7 @@ export default function Encargado() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedTab = searchParams.get('tab');
-  const initialTab = ['alumnos', 'perfil'].includes(requestedTab) ? requestedTab : 'solicitudes';
+  const initialTab = ['alumnos', 'perfil', 'borrar-grupos'].includes(requestedTab) ? requestedTab : 'solicitudes';
   const [sessionUser, setSessionUser] = useState(null);
   const [isDashboardLoading, setIsDashboardLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -85,7 +85,6 @@ export default function Encargado() {
   const [bulkDeleteCriteria, setBulkDeleteCriteria] = useState({ semester: '', group: '', career: '', shift: '' });
   const [bulkDeleteConfirmation, setBulkDeleteConfirmation] = useState(null);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleteTyped, setBulkDeleteTyped] = useState('');
   const [toast, setToast] = useState({ text: '', isError: false });
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
@@ -204,7 +203,6 @@ export default function Encargado() {
       setBulkDeleteConfirmation(null);
       setBulkDeleteCriteria({ semester: '', group: '', career: '', shift: '' });
       setBulkDeleteTyped('');
-      setBulkDeleteOpen(false);
       showToast(
         `Se eliminaron ${data.deletedStudents} alumnos, ${data.deletedRequests} solicitudes y ${data.deletedJustifications} justificantes.`
       );
@@ -345,11 +343,28 @@ export default function Encargado() {
   const clearStudentFilters = () => {
     setStudentSearch('');
     setStudentFilters({ career: '', semester: '', group: '', shift: '' });
+  };
+  const clearBulkDeleteCriteria = () => {
     setBulkDeleteCriteria({ semester: '', group: '', career: '', shift: '' });
     setBulkDeleteConfirmation(null);
     setBulkDeleteTyped('');
-    setBulkDeleteOpen(false);
   };
+  const bulkDeleteMatchingStudents = students.filter((student) => (
+    (!bulkDeleteCriteria.semester || Number(student.semester) === Number(bulkDeleteCriteria.semester))
+    && (!bulkDeleteCriteria.group || student.group === bulkDeleteCriteria.group)
+    && (!bulkDeleteCriteria.career || student.career === bulkDeleteCriteria.career)
+    && (!bulkDeleteCriteria.shift || (student.shift || 'Matutino') === bulkDeleteCriteria.shift)
+  )).sort((studentA, studentB) => (
+    Number(studentA.semester) - Number(studentB.semester)
+    || (studentA.group || '').localeCompare(studentB.group || '', 'es-MX', { sensitivity: 'base' })
+    || formatLastNamesFirst(studentA.fullName || '').localeCompare(
+      formatLastNamesFirst(studentB.fullName || ''),
+      'es-MX',
+      { sensitivity: 'base' }
+    )
+  ));
+  const hasBulkDeleteCriteria = bulkDeleteCriteria.semester
+    || bulkDeleteCriteria.group || bulkDeleteCriteria.career || bulkDeleteCriteria.shift;
 
   return (
     <div>
@@ -382,6 +397,16 @@ export default function Encargado() {
               <circle cx="10" cy="7" r="4"/>
               <path d="M20 21v-2a4 4 0 0 0-3-3.87"/>
               <path d="M17 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </button>
+          <button
+            className={`nav-link ${activeTab === 'borrar-grupos' ? 'active' : ''}`}
+            onClick={() => setActiveTab('borrar-grupos')}
+            aria-label="Borrar grupos"
+            title="Borrar grupos"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 6h18M8 6V4h8v2m3 0-.8 14H5.8L5 6m5 4v6m4-6v6"/>
             </svg>
           </button>
           <div className="sidebar-account-menu">
@@ -423,9 +448,12 @@ export default function Encargado() {
               <h1>
                 {activeTab === 'solicitudes'
                   ? 'Solicitudes de justificante'
-                  : activeTab === 'alumnos' ? 'Alumnos registrados en el plantel' : 'Mi perfil'}
+                  : activeTab === 'alumnos'
+                    ? 'Alumnos registrados en el plantel'
+                    : activeTab === 'borrar-grupos' ? 'Borrar grupos completos' : 'Mi perfil'}
               </h1>
               {activeTab === 'perfil' && <p className="heading-note">Consulta y actualiza la información de tu cuenta de personal.</p>}
+              {activeTab === 'borrar-grupos' && <p className="heading-note">Elimina de forma permanente un grupo completo: alumnos, solicitudes y justificantes.</p>}
             </div>
             <div className="student-chip">
               <span className="avatar">
@@ -560,21 +588,6 @@ export default function Encargado() {
                   <span className="legend-item"><i className="legend-dot yellow"></i>2: atención</span>
                   <span className="legend-item"><i className="legend-dot red"></i>3+: seguimiento</span>
                 </div>
-                <button
-                  className="bulk-delete-toggle"
-                  type="button"
-                  onClick={() => setBulkDeleteOpen((open) => !open)}
-                  aria-expanded={bulkDeleteOpen}
-                  aria-controls="bulk-delete-panel"
-                >
-                  <svg className="bulk-delete-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M3 6h18M8 6V4h8v2m3 0-.8 14H5.8L5 6m5 4v6m4-6v6"/>
-                  </svg>
-                  <strong>Eliminación de grupos</strong>
-                  <svg className="bulk-delete-toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="m6 9 6 6 6-6"/>
-                  </svg>
-                </button>
               </div>
 
               {isDashboardLoading ? (
@@ -632,70 +645,6 @@ export default function Encargado() {
                       </button>
                     )}
                   </div>
-                </div>
-                <div className="bulk-delete-zone">
-                  {bulkDeleteOpen && (
-                  <form id="bulk-delete-panel" className="bulk-delete-bar" onSubmit={handleBulkDeleteRequest}>
-                  <div className="bulk-delete-heading">
-                    <strong>Borrar grupo</strong>
-                    <span>Elimina alumnos y justificantes.</span>
-                  </div>
-                  <div className="bulk-delete-field">
-                    <label htmlFor="bulk-delete-semester">Semestre</label>
-                    <select
-                      id="bulk-delete-semester"
-                      value={bulkDeleteCriteria.semester}
-                      onChange={(event) => setBulkDeleteCriteria((criteria) => ({ ...criteria, semester: event.target.value }))}
-                      required
-                    >
-                      <option value="" disabled>Selecciona semestre</option>
-                      {[1, 2, 3, 4, 5, 6].map((semester) => <option key={semester} value={semester}>{semester}°</option>)}
-                    </select>
-                  </div>
-                  <div className="bulk-delete-field">
-                    <label htmlFor="bulk-delete-group">Grupo</label>
-                    <select
-                      id="bulk-delete-group"
-                      value={bulkDeleteCriteria.group}
-                      onChange={(event) => setBulkDeleteCriteria((criteria) => ({ ...criteria, group: event.target.value }))}
-                      required
-                    >
-                      <option value="" disabled>Selecciona grupo</option>
-                      {GROUP_OPTIONS.map((group) => <option key={group} value={group}>{group}</option>)}
-                    </select>
-                  </div>
-                  <div className="bulk-delete-field">
-                    <label htmlFor="bulk-delete-career">Especialidad</label>
-                    <select
-                      id="bulk-delete-career"
-                      value={bulkDeleteCriteria.career}
-                      onChange={(event) => setBulkDeleteCriteria((criteria) => ({ ...criteria, career: event.target.value }))}
-                      required
-                    >
-                      <option value="" disabled>Selecciona especialidad</option>
-                      {CAREER_OPTIONS.map((career) => <option key={career} value={career}>{career}</option>)}
-                    </select>
-                  </div>
-                  <div className="bulk-delete-field">
-                    <label htmlFor="bulk-delete-shift">Turno</label>
-                    <select
-                      id="bulk-delete-shift"
-                      value={bulkDeleteCriteria.shift}
-                      onChange={(event) => setBulkDeleteCriteria((criteria) => ({ ...criteria, shift: event.target.value }))}
-                      required
-                    >
-                      <option value="" disabled>Selecciona turno</option>
-                      {SHIFT_OPTIONS.map((shift) => <option key={shift} value={shift}>{shift}</option>)}
-                    </select>
-                  </div>
-                  <button className="bulk-delete-button" type="submit">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M3 6h18M8 6V4h8v2m3 0-.8 14H5.8L5 6m5 4v6m4-6v6"/>
-                    </svg>
-                    Borrar grupo
-                  </button>
-                  </form>
-                  )}
                 </div>
                 <section className="staff-section student-table-panel">
                   <div className="table-wrap">
@@ -756,6 +705,126 @@ export default function Encargado() {
                                 </svg>
                               </button>
                             </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    </table>
+                  </div>
+                </section>
+                </>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'borrar-grupos' && (
+            <div className="student-management">
+              {isDashboardLoading ? (
+                <LoadingState label="Cargando alumnos..." />
+              ) : (
+                <>
+                <form className="bulk-delete-bar" onSubmit={handleBulkDeleteRequest}>
+                  <div className="bulk-delete-heading">
+                    <strong>Borrar grupo</strong>
+                    <span>Elimina alumnos y justificantes.</span>
+                  </div>
+                  <div className="bulk-delete-field">
+                    <label htmlFor="bulk-delete-semester">Semestre</label>
+                    <select
+                      id="bulk-delete-semester"
+                      value={bulkDeleteCriteria.semester}
+                      onChange={(event) => setBulkDeleteCriteria((criteria) => ({ ...criteria, semester: event.target.value }))}
+                      required
+                    >
+                      <option value="" disabled>Selecciona semestre</option>
+                      {[1, 2, 3, 4, 5, 6].map((semester) => <option key={semester} value={semester}>{semester}°</option>)}
+                    </select>
+                  </div>
+                  <div className="bulk-delete-field">
+                    <label htmlFor="bulk-delete-group">Grupo</label>
+                    <select
+                      id="bulk-delete-group"
+                      value={bulkDeleteCriteria.group}
+                      onChange={(event) => setBulkDeleteCriteria((criteria) => ({ ...criteria, group: event.target.value }))}
+                      required
+                    >
+                      <option value="" disabled>Selecciona grupo</option>
+                      {GROUP_OPTIONS.map((group) => <option key={group} value={group}>{group}</option>)}
+                    </select>
+                  </div>
+                  <div className="bulk-delete-field">
+                    <label htmlFor="bulk-delete-career">Especialidad</label>
+                    <select
+                      id="bulk-delete-career"
+                      value={bulkDeleteCriteria.career}
+                      onChange={(event) => setBulkDeleteCriteria((criteria) => ({ ...criteria, career: event.target.value }))}
+                      required
+                    >
+                      <option value="" disabled>Selecciona especialidad</option>
+                      {CAREER_OPTIONS.map((career) => <option key={career} value={career}>{career}</option>)}
+                    </select>
+                  </div>
+                  <div className="bulk-delete-field">
+                    <label htmlFor="bulk-delete-shift">Turno</label>
+                    <select
+                      id="bulk-delete-shift"
+                      value={bulkDeleteCriteria.shift}
+                      onChange={(event) => setBulkDeleteCriteria((criteria) => ({ ...criteria, shift: event.target.value }))}
+                      required
+                    >
+                      <option value="" disabled>Selecciona turno</option>
+                      {SHIFT_OPTIONS.map((shift) => <option key={shift} value={shift}>{shift}</option>)}
+                    </select>
+                  </div>
+                  <button className="bulk-delete-button" type="submit">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M3 6h18M8 6V4h8v2m3 0-.8 14H5.8L5 6m5 4v6m4-6v6"/>
+                    </svg>
+                    Borrar grupo
+                  </button>
+                  <div className="student-filter-summary" aria-live="polite">
+                    {bulkDeleteMatchingStudents.length} de {students.length} alumnos
+                    {hasBulkDeleteCriteria && (
+                      <button className="student-filter-clear" type="button" onClick={clearBulkDeleteCriteria}>
+                        Limpiar filtros
+                      </button>
+                    )}
+                  </div>
+                </form>
+                <section className="staff-section student-table-panel">
+                  <div className="table-wrap">
+                    <table className="student-table">
+                    <thead>
+                      <tr>
+                        <th>Alumno</th>
+                        <th>Matrícula</th>
+                        <th>Carrera</th>
+                        <th>Semestre</th>
+                        <th>Grupo</th>
+                        <th>Turno</th>
+                        <th>Solicitudes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bulkDeleteMatchingStudents.length === 0 ? (
+                        <tr>
+                          <td className="student-empty-result" colSpan="7">No se encontraron alumnos con esos criterios.</td>
+                        </tr>
+                      ) : bulkDeleteMatchingStudents.map((student) => {
+                        const count = getRequestCount(student.account);
+                        const risk = count >= 3 ? 'red' : count === 2 ? 'yellow' : count === 1 ? 'green' : 'none';
+                        return (
+                          <tr key={student._id} className={`risk-${risk}`}>
+                            <td className="student-name-cell" title={`${formatLastNamesFirst(student.fullName)} · ${student.account}`}>
+                              <span className="student-single-line">{formatLastNamesFirst(student.fullName)}</span>
+                              <span className="student-email">{student.account}</span>
+                            </td>
+                            <td>{student.studentId}</td>
+                            <td>{student.career}</td>
+                            <td>{student.semester}°</td>
+                            <td>{student.group}</td>
+                            <td>{student.shift || 'Matutino'}</td>
+                            <td><span className="count-pill">{count}</span></td>
                           </tr>
                         );
                       })}
